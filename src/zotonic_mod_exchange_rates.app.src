@@ -1,0 +1,8 @@
+{application, zotonic_mod_exchange_rates, [
+    {description, "Support for currency exchange rates, automatically fetches rates."},
+    {vsn, git},
+    {registered, []},
+    {applications, [kernel, stdlib, zotonic_core]},
+    {env, []},
+    {modules, []}
+]}.
