@@ -26,10 +26,10 @@ m_get([ <<"rates">> | Rest ], _Msg, Context) ->
     {ok, Rates} = mod_exchange_rates:rates(Context),
     {ok, {Rates, Rest}};
 m_get([ <<"currencies">> | Rest ], _Msg, Context) ->
-    {ok, Currencies} = mod_exchange_rates:rates(Context),
+    {ok, Currencies} = mod_exchange_rates:currencies(Context),
     {ok, {Currencies, Rest}};
 m_get([ <<"convert">>, From, To, Amount | Rest ], _Msg, Context) ->
-    case mod_exchange_rates:exchange(z_convert:to_float(Amount), From, To, Context) of
+    case mod_exchange_rates:convert(z_convert:to_float(Amount), From, To, Context) of
         {ok, ToAmount} -> {ok, {ToAmount, Rest}};
         {error, _} = Error -> Error
     end;
