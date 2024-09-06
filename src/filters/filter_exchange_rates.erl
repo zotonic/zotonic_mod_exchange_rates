@@ -48,7 +48,7 @@ exchange_rates(Value, FromCurrency, ToCurrency, Context) ->
     Value1 = z_convert:to_float(Value),
     ToCr = to_currency(ToCurrency, Context),
     FromCr = to_currency(FromCurrency, Context),
-    case mod_exchange_rates:exchange(Value1, FromCr, ToCr, Context) of
+    case mod_exchange_rates:convert(Value1, FromCr, ToCr, Context) of
         {ok, V} -> V;
         {error, _} -> undefined
     end.
