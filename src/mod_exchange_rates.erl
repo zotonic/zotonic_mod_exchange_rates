@@ -61,7 +61,7 @@
 
 -record(rates, {
         base :: binary(),
-        rates :: #{ binary() => float() }
+        rates :: #{ binary() => float() } | list()
     }).
 
 -include_lib("zotonic_core/include/zotonic.hrl").
@@ -277,7 +277,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 code_change(_Version, State, _Extra) ->
-    {noreply, State}.
+    {ok, State}.
 
 terminate(_Reason, _State) ->
     ok.
