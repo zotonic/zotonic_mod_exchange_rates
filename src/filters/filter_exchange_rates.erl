@@ -1,8 +1,9 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2017 Marc Worrell
+%% @copyright 2017-2025 Marc Worrell
 %% @doc Filter to fetch exchange rates or list a single rate.
+%% @end
 
-%% Copyright 2017 Marc Worrell
+%% Copyright 2017-2025 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -23,6 +24,8 @@
     exchange_rates/3,
     exchange_rates/4
     ]).
+
+-include_lib("zotonic_core/include/zotonic.hrl").
 
 exchange_rates(undefined, _Context) -> undefined;
 exchange_rates(Currency, Context) ->
@@ -57,7 +60,7 @@ exchange_rates(Value, FromCurrency, ToCurrency, Context) ->
 to_currency(undefined, _Context) -> undefined;
 to_currency(<<>>, _Context) -> undefined;
 to_currency([], _Context) -> undefined;
-to_currency({trans, _} = Tr, Context) ->
+to_currency(#trans{} = Tr, Context) ->
     to_currency(z_trans:lookup_fallback(Tr, Context), Context);
 to_currency(C, _Context) when is_tuple(C) -> undefined;
 to_currency(Currency, _Context) -> z_convert:to_binary(Currency).

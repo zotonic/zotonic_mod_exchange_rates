@@ -1,9 +1,9 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2017-2024 Marc Worrell
+%% @copyright 2017-2025 Marc Worrell
 %% @doc Support for currency exchange rates, automatically fetches rates.
 %% @end
 
-%% Copyright 2017-2024 Marc Worrell
+%% Copyright 2017-2025 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@
 
 -define(BASE_CURRENCY, <<"USD">>).
 
--define(BTC_JSON_URL, "http://api.bitcoincharts.com/v1/weighted_prices.json").
 -define(ECB_XML_URL, "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml").
 
 -export([
@@ -49,9 +48,8 @@
     convert/4,
     update/1,
     base_currency/1,
-    fetch/1,
-    fetch_ecb/0,
-    fetch_btc/1
+    fetch/0,
+    fetch_ecb/0
     ]).
 
 -record(state, {
@@ -125,13 +123,12 @@ rates(Context) ->
 rate(Currency, Context) ->
     rate1(z_string:to_upper(z_convert:to_binary(Currency)), Context).
 
-rate1(<<"BTC">>, Context) ->
-    rate1(<<"XBT">>, Context);
 rate1(Currency, Context) ->
-    case base_currency(Context) of
-        Currency ->
+    BaseCurrency = base_currency(Context),
+    if
+        BaseCurrency =:= Currency ->
             {ok, 1.0};
-        _ ->
+        true ->
             Name = z_utils:name_for_site(?MODULE, Context),
             gen_server:call(Name, {rate, Currency})
     end.
@@ -206,8 +203,6 @@ exponent(<<"VUV">>) -> 0;
 exponent(<<"XAF">>) -> 0;
 exponent(<<"XOF">>) -> 0;
 exponent(<<"XPF">>) -> 0;
-exponent(<<"XBT">>) -> 8; % Bitcoin new
-exponent(<<"BTC">>) -> 8; % Bitcoin old
 exponent(_) -> 2.
 
 
@@ -247,9 +242,9 @@ handle_call(_, _From, State) ->
 
 handle_cast(update, State) ->
     Self = self(),
-    erlang:spawn_link(
+    z_proc:spawn_md(
         fun() ->
-            Fetched = fetch(z_context:new(State#state.site)),
+            Fetched = fetch(),
             Self ! {new_rates, Fetched}
         end),
     {noreply, State};
@@ -286,11 +281,9 @@ terminate(_Reason, _State) ->
 %% Internal functions
 %%====================================================================
 
-fetch(Context) ->
-    BTC = fetch_btc(Context),
+fetch() ->
     Cs = fetch_ecb(),
-    Rs = maps:merge(BTC, Cs),
-    Rs#{
+    Cs#{
         ?BASE_CURRENCY => 1.0
     }.
 
@@ -354,35 +347,3 @@ ecb_xml_error(XML) ->
     }),
     #{}.
 
-
-% BTC
-fetch_btc(Context) ->
-    fetch_btc_data(z_fetch:fetch_json(?BTC_JSON_URL, [], Context)).
-
-fetch_btc_data({ok, JSON}) ->
-    case maps:get(?BASE_CURRENCY, JSON) of
-        undefined ->
-            #{};
-        #{ <<"24h">> := Rate } ->
-            #{
-                <<"XBT">> => 1.0 / z_convert:to_float(Rate)
-            };
-        _ ->
-            ?LOG_INFO(#{
-                in => zotonic_mod_exchange_rates,
-                text => <<"No 24h key in BTC rates">>,
-                result => error,
-                reason => missing_24h,
-                url => ?BTC_JSON_URL
-            }),
-            #{}
-    end;
-fetch_btc_data(Other) ->
-    ?LOG_WARNING(#{
-        in => zotonic_mod_exchange_rates,
-        text => <<"Fetch of BTC (XBT) data failed">>,
-        result => error,
-        reason => Other,
-        url => ?BTC_JSON_URL
-    }),
-    #{}.
