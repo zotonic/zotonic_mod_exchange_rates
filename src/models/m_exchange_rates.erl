@@ -17,6 +17,39 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.-module(filter_exchange_rates).
 -module(m_exchange_rates).
+-moduledoc(#{
+    zotonic_keywords => [
+        "reference", "frontend_developer", "backend_developer", "model", "api_and_integration",
+        "number"
+    ]
+}).
+-moduledoc("
+Read currency rates and convert amounts using the site's `mod_exchange_rates`
+server. Rates express currency units per USD and may be retained from earlier
+updates. No ACL check is applied by this model.
+
+| Template path | Result |
+| --- | --- |
+| `m.exchange_rates.base_currency` | Base currency code, `USD`. |
+| `m.exchange_rates.currencies` | Sorted list of known binary currency codes. |
+| `m.exchange_rates.rates` | Map from binary currency codes to rates. |
+| `m.exchange_rates.convert[from][to][amount]` | Converted numeric amount. |
+
+For example:
+
+```django
+{{ m.exchange_rates.convert[\"USD\"][\"EUR\"][100] }}
+```
+
+The conversion path order is source currency, destination currency, amount.
+Its Erlang equivalent is
+`mod_exchange_rates:convert(100, <<\"USD\">>, <<\"EUR\">>, Context)`.
+Conversion follows the rounding rules documented by `mod_exchange_rates`;
+missing or unavailable currencies return `currency_from` or `currency_to`
+errors. The `m_get/3` callback wraps successful values as
+`{ok, {Value, Rest}}` and propagates conversion errors. There is no catch-all
+clause for unsupported model paths.
+").
 
 -export([
     m_get/3
