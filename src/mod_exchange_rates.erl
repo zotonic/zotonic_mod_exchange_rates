@@ -18,6 +18,49 @@
 %% limitations under the License.
 
 -module(mod_exchange_rates).
+-moduledoc(#{
+    zotonic_keywords => [
+        "reference", "backend_developer", "integrator", "module", "api_and_integration",
+        "scheduled_and_background_work", "number"
+    ]
+}).
+-moduledoc("
+Fetch currency exchange rates from the ECB daily XML feed and expose them
+through `m_exchange_rates`, the `exchange_rates` template filter and Erlang
+functions. Enable `mod_exchange_rates` with its dependency `mod_tkvstore`.
+There are no module configuration keys or API credentials.
+
+## Updates and rate units
+
+A per-site server fetches rates asynchronously at startup and on `tick_12h`.
+`update(Context)` requests another asynchronous fetch and returns `ok` before
+it finishes. Rates are normalized to USD: a rate is the number of units of
+that currency per US dollar, with USD fixed at `1.0`.
+
+After fetching, the server merges in-memory and persisted rates, then writes
+the result to `mod_tkvstore`. Fresh values override stored values. Handled
+fetch failures retain previous currencies; rates have no exposed timestamp
+or expiry check. Before the initial update finishes, the rates map is empty.
+
+## Erlang interface
+
+```erlang
+mod_exchange_rates:rate(<<\"EUR\">>, Context).
+mod_exchange_rates:convert(100, <<\"USD\">>, <<\"EUR\">>, Context).
+```
+
+`base_currency/1` returns `<<\"USD\">>`. `rates/1` returns `{ok, Map}` and
+`currencies/1` returns `{ok, SortedCurrencyCodes}`. `rate/2` normalizes the
+currency code to uppercase and returns `{ok, Rate}` or
+`{error, unknown_currency}`. USD always has rate `1.0`.
+
+`convert/4` computes `Amount / FromRate * ToRate`, rounded using the module's
+currency exponent table (two decimal places by default). It returns
+`{ok, Amount}` or `{error, currency_from | currency_to}` for a missing or
+unavailable currency. Identical source and destination values bypass rate
+lookup and return the input as a float without currency rounding.
+These data-access functions do not perform ACL checks.
+").
 
 -mod_author("Marc Worrell <marc@worrell.nl>").
 -mod_title("Exchange Rates").
