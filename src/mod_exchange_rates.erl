@@ -250,7 +250,7 @@ exponent(_) -> 2.
 
 
 %% @doc Start the gen_server
--spec start_link(list()) -> {ok, pid()} | {error, term()}.
+-spec start_link(list()) -> {ok, pid()} | ignore | {error, term()}.
 start_link(Args) when is_list(Args) ->
     {context, Context} = proplists:lookup(context, Args),
     Name = z_utils:name_for_site(?MODULE, Context),
